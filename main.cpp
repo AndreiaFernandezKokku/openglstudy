@@ -266,7 +266,7 @@ glm::mat4 Model(float angle)
 {
 	// Model matrix: an identity matrix (model will be at the origin)
 	glm::mat4 Model = glm::mat4(1.0f);
-	glm::rotate(Model, glm::radians(angle), glm::vec3(0, 1, 0));
+	Model = glm::rotate(Model, glm::radians(angle), glm::vec3(0, 1, 0));
 	return Model;
 }
 

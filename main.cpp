@@ -11,6 +11,7 @@
 #include <sstream>
 #include <vector>
 #include "ImageCustomLoader.h"
+#include <glm/gtc/type_ptr.hpp>
 
 int windowWidth = 1024;
 int windowHeight = 768;
@@ -67,59 +68,48 @@ struct Vertex
 	}
 };
 
-//cube
-// Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
-// A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
-static const Vertex g_vertex_buffer_data[] = {
-	 Vertex(-1.0f,-1.0f,-1.0f, 1.f, 0.f, 0.f, 0.000059f, 1.0f - 0.000004f),
-	 Vertex(-1.0f,-1.0f, 1.0f, 0.583f, 0.771f, 0.014f, 0.000103f, 1.0f - 0.336048f),
-	 Vertex(-1.0f, 1.0f, 1.0f, 0.609f, 0.115f, 0.436f, 0.335973f, 1.0f - 0.335903f),
-	 Vertex(1.0f, 1.0f,-1.0f, 0.327f, 0.483f, 0.844f, 1.000023f, 1.0f - 0.000013f),
-	 Vertex(-1.0f,-1.0f,-1.0f, 0.822f, 0.569f, 0.201f, 0.667979f, 1.0f - 0.335851f),
-	 Vertex(-1.0f, 1.0f,-1.0f, 0.435f, 0.602f, 0.223f, 0.999958f, 1.0f - 0.336064f),
-	 Vertex(1.0f,-1.0f, 1.0f, 0.310f, 0.747f, 0.185f, 0.667979f, 1.0f - 0.335851f),
-	 Vertex(-1.0f,-1.0f,-1.0f, 0.597f, 0.770f, 0.761f, 0.336024f, 1.0f - 0.671877f),
-	 Vertex(1.0f,-1.0f,-1.0f, 0.559f, 0.436f, 0.730f, 0.667969f, 1.0f - 0.671889f),
-	 Vertex(1.0f, 1.0f,-1.0f, 0.359f, 0.583f, 0.152f, 1.000023f, 1.0f - 0.000013f),
-	 Vertex(1.0f,-1.0f,-1.0f,0.483f, 0.596f, 0.789f, 0.668104f, 1.0f - 0.000013f),
-	 Vertex(-1.0f,-1.0f,-1.0f, 0.559f, 0.861f, 0.639f, 0.667979f, 1.0f - 0.335851f),
-	 Vertex(-1.0f,-1.0f,-1.0f, 0.195f, 0.548f, 0.859f, 0.000059f, 1.0f - 0.000004f),
-	 Vertex(-1.0f, 1.0f, 1.0f,0.014f, 0.184f, 0.576f, 0.335973f, 1.0f - 0.335903f),
-	 Vertex(-1.0f, 1.0f,-1.0f, 0.771f, 0.328f, 0.970f, 0.336098f, 1.0f - 0.000071f),
-	 Vertex(1.0f,-1.0f, 1.0f, 0.406f, 0.615f, 0.116f, 0.667979f, 1.0f - 0.335851f),
-	 Vertex(-1.0f,-1.0f, 1.0f, 0.676f, 0.977f, 0.133f, 0.335973f, 1.0f - 0.335903f),
-	 Vertex(-1.0f,-1.0f,-1.0f, 0.971f, 0.572f, 0.833f, 0.336024f, 1.0f - 0.671877f),
-	 Vertex(-1.0f, 1.0f, 1.0f, 0.140f, 0.616f, 0.489f, 1.000004f, 1.0f - 0.671847f),
-	 Vertex(-1.0f,-1.0f, 1.0f, 0.997f, 0.513f, 0.064f, 0.999958f, 1.0f - 0.336064f),
-	 Vertex(1.0f,-1.0f, 1.0f, 0.945f, 0.719f, 0.592f, 0.667979f, 1.0f - 0.335851f),
-	 Vertex(1.0f, 1.0f, 1.0f, 0.543f, 0.021f, 0.978f, 0.668104f, 1.0f - 0.000013f),
-	 Vertex(1.0f,-1.0f,-1.0f, 0.279f, 0.317f, 0.505f, 0.335973f, 1.0f - 0.335903f),
-	 Vertex(1.0f, 1.0f,-1.0f, 0.167f, 0.620f, 0.077f, 0.667979f, 1.0f - 0.335851f),
-	 Vertex(1.0f,-1.0f,-1.0f, 0.347f, 0.857f, 0.137f, 0.335973f, 1.0f - 0.335903f),
-	 Vertex(1.0f, 1.0f, 1.0f, 0.055f, 0.953f, 0.042f, 0.668104f, 1.0f - 0.000013f),
-	 Vertex(1.0f,-1.0f, 1.0f, 0.714f, 0.505f, 0.345f, 0.336098f, 1.0f - 0.000071f),
-	 Vertex(1.0f, 1.0f, 1.0f, 0.783f, 0.290f, 0.734f, 0.000103f, 1.0f - 0.336048f),
-	 Vertex(1.0f, 1.0f,-1.0f, 0.722f, 0.645f, 0.174f, 0.000004f, 1.0f - 0.671870f),
-	 Vertex(-1.0f, 1.0f,-1.0f, 0.302f, 0.455f, 0.848f, 0.336024f, 1.0f - 0.671877f),
-	 Vertex(1.0f, 1.0f, 1.0f, 0.517f, 0.713f, 0.338f, 0.000103f, 1.0f - 0.336048f),
-	 Vertex(-1.0f, 1.0f,-1.0f, 0.053f, 0.959f, 0.120f, 0.336024f, 1.0f - 0.671877f),
-	 Vertex(-1.0f, 1.0f, 1.0f, 0.393f, 0.621f, 0.362f, 0.335973f, 1.0f - 0.335903f),
-	 Vertex(1.0f, 1.0f, 1.0f, 0.673f, 0.211f, 0.457f, 0.667969f, 1.0f - 0.671889f),
-	 Vertex(-1.0f, 1.0f, 1.0f,  0.820f, 0.883f, 0.371f, 1.000004f, 1.0f - 0.671847f),
-	 Vertex(1.0f,-1.0f, 1.0f, 0.982f, 0.099f, 0.879f, 0.667979f, 1.0f - 0.335851f)
+//cube vertexes
+static const Vertex g_vertex_buffer_data[] =
+{
+	Vertex(1.0f, 1.0f,-1.0f, 1.f, 0.f, 0.f, 1.0f, 1.0f), //0
+	Vertex(-1.0f, 1.0f, -1.0f, 0.583f, 0.771f, 0.014f, 0.0f, 1.0f), //1
+	Vertex(1.0f, 1.0f, 1.0f, 0.609f, 0.115f, 0.436f, 1.0f, 1.0f), //2
+	Vertex(-1.0f, 1.0f, 1.0f, 0.327f, 0.483f, 0.844f, 0.0f, 1.0f), //3
+	Vertex(1.0f, -1.0f, -1.0f, 0.435f, 0.602f, 0.223f, 1.0f, 0.0f), //4
+	Vertex(-1.0f,-1.0f, -1.0f, 0.559f, 0.436f, 0.730f, 0.0f, 0.0f), //5
+	Vertex(-1.0f, -1.0f, 1.0f, 0.359f, 0.583f, 0.152f, 0.0f, 0.0f), //6
+	Vertex(1.0f, -1.0f, 1.0f, 0.517f, 0.713f, 0.338f, 1.0f, 0.0f) //7
 };
 
-GLuint CreateBuffer()
+static const std::vector<unsigned int> indices =
+{
+	0,1,4,5,6,1,3,0,2,4,7,6,2,3
+};
+
+struct RenderBuffer
+{
+	GLuint vbo; //vertex buffer object
+	GLuint ibo; //index buffer object
+};
+
+RenderBuffer CreateBuffer()
 {
 	// This will identify our vertex buffer
-	GLuint vertexbuffer = 0;
+	RenderBuffer buffer;
+
 	// Generate 1 buffer, put the resulting identifier in vertexbuffer
-	glGenBuffers(1, &vertexbuffer);
+	glGenBuffers(1, &buffer.vbo);
+
+	glGenBuffers(1, &buffer.ibo);
+
 	// The following commands will talk about our 'vertexbuffer' buffer
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
 	// Give our vertices to OpenGL.
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-	return vertexbuffer;
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), &indices[0], GL_STATIC_DRAW);
+	return buffer;
 }
 
 //fragment shader == pixel shader
@@ -212,10 +202,11 @@ GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path
 	return ProgramID;
 }
 
-void DrawMesh(GLuint vertexBuffer, GLuint shader)
+void DrawMesh(RenderBuffer renderBuffer, GLuint shader)
 {
 	glEnableVertexAttribArray(0);//vertex
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, renderBuffer.vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderBuffer.ibo);
 	glVertexAttribPointer(
 		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
@@ -245,13 +236,14 @@ void DrawMesh(GLuint vertexBuffer, GLuint shader)
 	glUseProgram(shader);
 
 	//Draw the cube!
-	glDrawArrays(GL_TRIANGLES, 0, 12 * 3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
+	//glDrawArrays(GL_TRIANGLES, 0, 12 * 3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
+	glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_INT, (void*)0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
 }
 
-glm::mat4 ProjectionViewModel() 
+glm::mat4 ProjectionView() 
 {
 	// Projection matrix: 45° Field of View, 4:3 ratio, display range: 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
@@ -263,12 +255,19 @@ glm::mat4 ProjectionViewModel()
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
-	// Model matrix: an identity matrix (model will be at the origin)
-	glm::mat4 Model = glm::mat4(1.0f);
+	
 	// Our ModelViewProjection: multiplication of our 3 matrices
-	glm::mat4 mvp = Projection * View * Model; // Remember, matrix multiplication is the other way 
+	glm::mat4 mvp = Projection * View; // Remember, matrix multiplication is the other way 
 
 	return mvp;
+}
+
+glm::mat4 Model(float angle)
+{
+	// Model matrix: an identity matrix (model will be at the origin)
+	glm::mat4 Model = glm::mat4(1.0f);
+	glm::rotate(Model, glm::radians(angle), glm::vec3(0, 1, 0));
+	return Model;
 }
 
 int Render(GLFWwindow* window)
@@ -280,27 +279,36 @@ int Render(GLFWwindow* window)
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
 
-	GLuint mesh = CreateBuffer();
+	RenderBuffer mesh = CreateBuffer();
 	GLuint shader = CreateShader("vs.vert", "fs.frag");
 
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
-	glm::mat4 mvp = ProjectionViewModel();
+
+	glm::mat4 mvp = ProjectionView();
+	float angle = 0;
+	glm::mat4 model;
 
 	do 
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		DrawMesh(mesh, shader);
+
+		model = mvp * Model(angle);
 		// Send our transformation to the currently bound shader, in the "MVP" uniform
 		// This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(model));
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		std::cout << angle << std::endl;
+		angle += 1.f;
+		Sleep(1);
 	}
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
 		glfwWindowShouldClose(window) == 0);
 
-	glDeleteBuffers(1, &mesh);
+	glDeleteBuffers(1, &mesh.vbo);
+	glDeleteBuffers(1, &mesh.ibo);
 	glDeleteProgram(shader);
 	return 0;
 }

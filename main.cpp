@@ -12,6 +12,7 @@
 #include <vector>
 #include "ImageCustomLoader.h"
 #include <glm/gtc/type_ptr.hpp>
+#include "common/Controls.h"
 
 int windowWidth = 1024;
 int windowHeight = 768;
@@ -277,6 +278,10 @@ int Render(GLFWwindow* window)
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
+	// Cull triangles which normal is not towards the camera
+	glEnable(GL_CULL_FACE);
+	//instead of back face culling, we do front face culling due to the nature of the instantiated cube
+	glCullFace(GL_FRONT);
 
 	RenderBuffer mesh = CreateBuffer();
 	GLuint shader = CreateShader("vs.vert", "fs.frag");
@@ -284,23 +289,26 @@ int Render(GLFWwindow* window)
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
 
-	glm::mat4 mvp = ProjectionView();
 	float angle = 0;
-	glm::mat4 model;
+	glm::mat4 mvp;
+	double lastTime = glfwGetTime();
 
 	do 
 	{
+		double currentTime = glfwGetTime();
+		float deltaTime = float(currentTime - lastTime);
+		lastTime = currentTime;
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		DrawMesh(mesh, shader);
 
-		model = mvp * Model(angle);
+		mvp = ComputeMatricesFromInputs(window, deltaTime) * Model(angle);
 		// Send our transformation to the currently bound shader, in the "MVP" uniform
 		// This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(mvp));
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-		angle += 1.f;
-		Sleep(1);
+		angle += 10.f * deltaTime;
 	}
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
 		glfwWindowShouldClose(window) == 0);
@@ -317,6 +325,7 @@ int main()
 	if (window == nullptr) return -2;
 	glewInit();
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	
 	return Render(window);
 }

@@ -27,6 +27,9 @@
     <ClCompile Include="common\Controls.cpp">
       <Filter>Source Files\common</Filter>
     </ClCompile>
+    <ClCompile Include="Object3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vs.vert" />
@@ -38,6 +41,9 @@
     </ClInclude>
     <ClInclude Include="common\Controls.h">
       <Filter>Source Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="Object3D.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

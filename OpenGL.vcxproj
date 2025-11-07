@@ -129,6 +129,7 @@
     <ClCompile Include="common\Controls.cpp" />
     <ClCompile Include="ImageCustomLoader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Object3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fs.frag" />
@@ -137,6 +138,7 @@
   <ItemGroup>
     <ClInclude Include="common\Controls.h" />
     <ClInclude Include="ImageCustomLoader.h" />
+    <ClInclude Include="Object3D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

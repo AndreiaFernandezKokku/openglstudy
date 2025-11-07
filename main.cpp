@@ -1,17 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <Windows.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
 #include "ImageCustomLoader.h"
 #include <glm/gtc/type_ptr.hpp>
+#include "common/Controls.h"
+#include "Object3D.h"
 
 int windowWidth = 1024;
 int windowHeight = 768;
@@ -49,27 +45,8 @@ GLFWwindow* OpenGLWindow()
 	return glfwWindow;
 }
 
-struct Vertex 
-{
-	glm::vec3 pos;
-	glm::vec3 color;
-	glm::vec2 uvCord;
-
-	Vertex(float x, float y, float z, float r, float g, float b, float u, float v)
-	{
-		pos.x = x;
-		pos.y = y;
-		pos.z = z;
-		color.r = r;
-		color.g = g;
-		color.b = b;
-		uvCord.x = u;
-		uvCord.y = v;
-	}
-};
-
 //cube vertexes
-static const Vertex g_vertex_buffer_data[] =
+static const std::vector<Vertex> cube_vertex_buffer_data =
 {
 	Vertex(1.0f, 1.0f,-1.0f, 1.f, 0.f, 0.f, 1.0f, 1.0f), //0
 	Vertex(-1.0f, 1.0f, -1.0f, 0.583f, 0.771f, 0.014f, 0.0f, 1.0f), //1
@@ -81,36 +58,23 @@ static const Vertex g_vertex_buffer_data[] =
 	Vertex(1.0f, -1.0f, 1.0f, 0.517f, 0.713f, 0.338f, 1.0f, 0.0f) //7
 };
 
-static const std::vector<unsigned int> indices =
+static const std::vector<unsigned int> cube_indices =
 {
 	0,1,4,5,6,1,3,0,2,4,7,6,2,3
 };
 
-struct RenderBuffer
+static const std::vector<Vertex> plane_vertex_buffer_data =
 {
-	GLuint vbo; //vertex buffer object
-	GLuint ibo; //index buffer object
+	Vertex(1,0,1,1,1,1,0,0),
+	Vertex(1,0,-1,1,1,1,0,1),
+	Vertex(-1,0,-1,1,1,1,1,1),
+	Vertex(-1,0,1,1,1,1,1,0)
 };
 
-RenderBuffer CreateBuffer()
+static const std::vector<unsigned int> plane_indices =
 {
-	// This will identify our vertex buffer
-	RenderBuffer buffer;
-
-	// Generate 1 buffer, put the resulting identifier in vertexbuffer
-	glGenBuffers(1, &buffer.vbo);
-
-	glGenBuffers(1, &buffer.ibo);
-
-	// The following commands will talk about our 'vertexbuffer' buffer
-	glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-	// Give our vertices to OpenGL.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), &indices[0], GL_STATIC_DRAW);
-	return buffer;
-}
+	0,1,2,3
+};
 
 //fragment shader == pixel shader
 GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path)
@@ -202,8 +166,9 @@ GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path
 	return ProgramID;
 }
 
-void DrawMesh(RenderBuffer renderBuffer, GLuint shader)
+void DrawMesh(Object3D mesh, GLuint shader, const glm::mat4& vp)
 {
+	const RenderBuffer renderBuffer = mesh.GetRenderBuffer();
 	glEnableVertexAttribArray(0);//vertex
 	glBindBuffer(GL_ARRAY_BUFFER, renderBuffer.vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderBuffer.ibo);
@@ -235,9 +200,10 @@ void DrawMesh(RenderBuffer renderBuffer, GLuint shader)
 	);
 	glUseProgram(shader);
 
-	//Draw the cube!
-	//glDrawArrays(GL_TRIANGLES, 0, 12 * 3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
-	glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_INT, (void*)0);
+	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
+	glm::mat4 mvp = vp * mesh.GetTransform();
+	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(mvp));
+	glDrawElements(GL_TRIANGLE_STRIP, mesh.IndexSize(), GL_UNSIGNED_INT, (void*)0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
@@ -255,7 +221,6 @@ glm::mat4 ProjectionView()
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
-	
 	// Our ModelViewProjection: multiplication of our 3 matrices
 	glm::mat4 mvp = Projection * View; // Remember, matrix multiplication is the other way 
 
@@ -278,37 +243,40 @@ int Render(GLFWwindow* window)
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
+	// Cull triangles which normal is not towards the camera
+	glEnable(GL_CULL_FACE);
+	//instead of back face culling, we do front face culling due to the nature of the instantiated cube
+	glCullFace(GL_FRONT);
 
-	RenderBuffer mesh = CreateBuffer();
+	Object3D mesh(cube_vertex_buffer_data, cube_indices);
+	Object3D plane(plane_vertex_buffer_data, plane_indices);
+
 	GLuint shader = CreateShader("vs.vert", "fs.frag");
 
-	// Get a handle for our "MVP" uniform
-	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
-
-	glm::mat4 mvp = ProjectionView();
-	float angle = 0;
-	glm::mat4 model;
+	float angle = 10.f;
+	glm::mat4 vp = ProjectionView();
+	double lastTime = glfwGetTime();
 
 	do 
 	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		DrawMesh(mesh, shader);
+		double currentTime = glfwGetTime();
+		float deltaTime = float(currentTime - lastTime);
+		lastTime = currentTime;
 
-		model = mvp * Model(angle);
-		// Send our transformation to the currently bound shader, in the "MVP" uniform
-		// This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(model));
+		vp = ComputeMatricesFromInputs(window, deltaTime);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		mesh.Rotate(glm::vec3(0.f, 1.f, 0.f), glm::radians(angle * deltaTime));
+
+		DrawMesh(mesh, shader, vp);
+		DrawMesh(plane, shader, vp);
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-		std::cout << angle << std::endl;
-		angle += 1.f;
-		Sleep(1);
 	}
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
 		glfwWindowShouldClose(window) == 0);
 
-	glDeleteBuffers(1, &mesh.vbo);
-	glDeleteBuffers(1, &mesh.ibo);
 	glDeleteProgram(shader);
 	return 0;
 }
@@ -319,6 +287,7 @@ int main()
 	if (window == nullptr) return -2;
 	glewInit();
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	
 	return Render(window);
 }

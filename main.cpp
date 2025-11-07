@@ -73,7 +73,7 @@ static const std::vector<Vertex> plane_vertex_buffer_data =
 
 static const std::vector<unsigned int> plane_indices =
 {
-	0,1,2,3
+	0,1,3,2
 };
 
 //fragment shader == pixel shader
@@ -166,7 +166,7 @@ GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path
 	return ProgramID;
 }
 
-void DrawMesh(Object3D mesh, GLuint shader, const glm::mat4& vp)
+void DrawMesh(const Object3D& mesh, GLuint shader, const glm::mat4& vp)
 {
 	const RenderBuffer renderBuffer = mesh.GetRenderBuffer();
 	glEnableVertexAttribArray(0);//vertex
@@ -250,6 +250,10 @@ int Render(GLFWwindow* window)
 
 	Object3D mesh(cube_vertex_buffer_data, cube_indices);
 	Object3D plane(plane_vertex_buffer_data, plane_indices);
+	plane.SetScale(glm::vec3(2.f, 2.f, 2.f));
+	plane.Rotate(glm::vec3(1.f, 0.f, 0.f), glm::radians(180.f));
+	plane.Translate(glm::vec3(0.f, 1.5f, 0.f));
+
 
 	GLuint shader = CreateShader("vs.vert", "fs.frag");
 
@@ -266,7 +270,8 @@ int Render(GLFWwindow* window)
 		vp = ComputeMatricesFromInputs(window, deltaTime);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		mesh.Rotate(glm::vec3(0.f, 1.f, 0.f), glm::radians(angle * deltaTime));
+		mesh.Rotate(glm::vec3(0.f, 0.f, 1.f), glm::radians(angle * deltaTime));
+		plane.parentTransform = mesh.GetTransform();
 
 		DrawMesh(mesh, shader, vp);
 		DrawMesh(plane, shader, vp);

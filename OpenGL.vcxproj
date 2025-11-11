@@ -127,9 +127,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="common\Controls.cpp" />
+    <ClCompile Include="common\objloader.cpp" />
     <ClCompile Include="ImageCustomLoader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Object3D.cpp" />
+    <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fs.frag" />
@@ -137,8 +139,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\Controls.h" />
+    <ClInclude Include="common\objloader.h" />
     <ClInclude Include="ImageCustomLoader.h" />
     <ClInclude Include="Object3D.h" />
+    <ClInclude Include="Renderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

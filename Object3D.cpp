@@ -54,3 +54,8 @@ void Object3D::SetScale(const glm::vec3& scale)
 {
 	transform = glm::scale(glm::mat4(1.f), scale);
 }
+
+void Object3D::SetTexture(GLuint textureID)
+{
+	texture = textureID;
+}

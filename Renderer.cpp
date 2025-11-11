@@ -1,0 +1,196 @@
+#include "Renderer.h"
+#include "Object3D.h"
+#include <glm/gtc/type_ptr.hpp>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include "ImageCustomLoader.h"
+
+void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp)
+{
+	const RenderBuffer renderBuffer = mesh->GetRenderBuffer();
+	glEnableVertexAttribArray(0);//vertex
+	glBindBuffer(GL_ARRAY_BUFFER, renderBuffer.vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderBuffer.ibo);
+	glVertexAttribPointer(
+		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized
+		8 * sizeof(GLfloat),                  // stride
+		(void*)0            // array buffer offset
+	);
+	glEnableVertexAttribArray(1); //color
+	glVertexAttribPointer(
+		1,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		8 * sizeof(GLfloat),
+		(void*)(3 * sizeof(GLfloat))
+	);
+	glEnableVertexAttribArray(2); //uv
+	glVertexAttribPointer(
+		2,
+		2,
+		GL_FLOAT,
+		GL_FALSE,
+		8 * sizeof(GLfloat),
+		(void*)(6 * sizeof(GLfloat))
+	);
+	glUseProgram(shader);
+
+	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
+	glm::mat4 mvp = vp * mesh->GetTransform();
+	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(mvp));
+	glBindTexture(GL_TEXTURE_2D, mesh->GetTexture());
+	glDrawElements(GL_TRIANGLE_STRIP, mesh->IndexSize(), GL_UNSIGNED_INT, (void*)0);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+}
+
+
+//fragment shader == pixel shader
+GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path)
+{
+	std::string hash = vertex_file_path;
+	hash.append("|");
+	hash.append(fragment_file_path);
+	if (ShaderPool.count(hash)) 
+	{
+		return ShaderPool[hash].id;
+	}
+	// Create the shaders
+	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+	GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+	// Read the Vertex Shader code from the file
+	std::string VertexShaderCode;
+	std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
+	if (VertexShaderStream.is_open()) {
+		std::stringstream sstr;
+		sstr << VertexShaderStream.rdbuf();
+		VertexShaderCode = sstr.str();
+		VertexShaderStream.close();
+	}
+	else {
+		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
+		getchar();
+		return 0;
+	}
+
+	// Read the Fragment Shader code from the file
+	std::string FragmentShaderCode;
+	std::ifstream FragmentShaderStream(fragment_file_path, std::ios::in);
+	if (FragmentShaderStream.is_open()) {
+		std::stringstream sstr;
+		sstr << FragmentShaderStream.rdbuf();
+		FragmentShaderCode = sstr.str();
+		FragmentShaderStream.close();
+	}
+
+	GLint Result = GL_FALSE;
+	int InfoLogLength;
+
+	// Compile Vertex Shader
+	printf("Compiling shader : %s\n", vertex_file_path);
+	char const* VertexSourcePointer = VertexShaderCode.c_str();
+	glShaderSource(VertexShaderID, 1, &VertexSourcePointer, NULL);
+	glCompileShader(VertexShaderID);
+
+	// Check Vertex Shader
+	glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength > 0) {
+		std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
+		glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+		printf("%s\n", &VertexShaderErrorMessage[0]);
+	}
+
+	// Compile Fragment Shader
+	printf("Compiling shader : %s\n", fragment_file_path);
+	char const* FragmentSourcePointer = FragmentShaderCode.c_str();
+	glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
+	glCompileShader(FragmentShaderID);
+
+	// Check Fragment Shader
+	glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
+	glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength > 0) {
+		std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
+		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
+		printf("%s\n", &FragmentShaderErrorMessage[0]);
+	}
+
+	// Link the program
+	printf("Linking program\n");
+	GLuint ProgramID = glCreateProgram();
+	glAttachShader(ProgramID, VertexShaderID);
+	glAttachShader(ProgramID, FragmentShaderID);
+	glLinkProgram(ProgramID);
+
+	// Check the program
+	glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
+	glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength > 0) {
+		std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
+		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+		printf("%s\n", &ProgramErrorMessage[0]);
+	}
+
+	glDetachShader(ProgramID, VertexShaderID);
+	glDetachShader(ProgramID, FragmentShaderID);
+
+	glDeleteShader(VertexShaderID);
+	glDeleteShader(FragmentShaderID);
+
+	ShaderPool[hash] = Shader(ProgramID);
+
+	return ProgramID;
+}
+
+const Texture& Renderer::CreateTexture(std::string texturePath, std::string name)
+{
+	if (name.size() == 0)
+	{
+		name = texturePath;
+	}
+	if (TexturePool.count(name))
+	{
+		return TexturePool[name];
+	}
+	ImageCustomLoader loader = ImageCustomLoader();
+	GLuint texture = loader.LoadBMP_custom("imagemodel.bmp");
+	glBindTexture(GL_TEXTURE_2D, 0);
+	TexturePool[name] = Texture(texture);
+	return TexturePool[name];
+}
+
+const Texture& Renderer::CreateRenderTarget(std::string name, GLuint width, GLuint height, GLuint glformat)
+{
+	if (TexturePool.count(name))
+	{
+		return TexturePool[name];
+	}
+
+	GLuint renderTarget; 
+	GLuint renderBuffer;
+	glGenFramebuffers(1, &renderBuffer);
+	glGenTextures(1, &renderTarget);
+	glBindTexture(GL_TEXTURE_2D, renderTarget);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, glformat, width, height, 0, glformat, GL_UNSIGNED_BYTE, 0);
+	//here we do not want mip map since this is a render target
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	TexturePool[name] = Texture(renderTarget, renderBuffer);
+	return TexturePool[name];
+}
+
+GLuint Renderer::GetTexture(std::string name)
+{
+	return TexturePool.count(name) ? TexturePool[name].id : 0;
+}

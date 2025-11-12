@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "common/Controls.h"
 #include "Object3D.h"
+#include "Renderer.h"
 
 int windowWidth = 1024;
 int windowHeight = 768;
@@ -73,141 +74,9 @@ static const std::vector<Vertex> plane_vertex_buffer_data =
 
 static const std::vector<unsigned int> plane_indices =
 {
-	0,1,2,3
+	0,1,3,2
 };
 
-//fragment shader == pixel shader
-GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path)
-{
-	// Create the shaders
-	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-	GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-	// Read the Vertex Shader code from the file
-	std::string VertexShaderCode;
-	std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
-	if (VertexShaderStream.is_open()) {
-		std::stringstream sstr;
-		sstr << VertexShaderStream.rdbuf();
-		VertexShaderCode = sstr.str();
-		VertexShaderStream.close();
-	}
-	else {
-		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
-		getchar();
-		return 0;
-	}
-
-	// Read the Fragment Shader code from the file
-	std::string FragmentShaderCode;
-	std::ifstream FragmentShaderStream(fragment_file_path, std::ios::in);
-	if (FragmentShaderStream.is_open()) {
-		std::stringstream sstr;
-		sstr << FragmentShaderStream.rdbuf();
-		FragmentShaderCode = sstr.str();
-		FragmentShaderStream.close();
-	}
-
-	GLint Result = GL_FALSE;
-	int InfoLogLength;
-
-	// Compile Vertex Shader
-	printf("Compiling shader : %s\n", vertex_file_path);
-	char const* VertexSourcePointer = VertexShaderCode.c_str();
-	glShaderSource(VertexShaderID, 1, &VertexSourcePointer, NULL);
-	glCompileShader(VertexShaderID);
-
-	// Check Vertex Shader
-	glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-	glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-	if (InfoLogLength > 0) {
-		std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
-		glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-		printf("%s\n", &VertexShaderErrorMessage[0]);
-	}
-
-	// Compile Fragment Shader
-	printf("Compiling shader : %s\n", fragment_file_path);
-	char const* FragmentSourcePointer = FragmentShaderCode.c_str();
-	glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
-	glCompileShader(FragmentShaderID);
-
-	// Check Fragment Shader
-	glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-	glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-	if (InfoLogLength > 0) {
-		std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
-		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
-		printf("%s\n", &FragmentShaderErrorMessage[0]);
-	}
-
-	// Link the program
-	printf("Linking program\n");
-	GLuint ProgramID = glCreateProgram();
-	glAttachShader(ProgramID, VertexShaderID);
-	glAttachShader(ProgramID, FragmentShaderID);
-	glLinkProgram(ProgramID);
-
-	// Check the program
-	glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
-	glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-	if (InfoLogLength > 0) {
-		std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
-		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-		printf("%s\n", &ProgramErrorMessage[0]);
-	}
-
-	glDetachShader(ProgramID, VertexShaderID);
-	glDetachShader(ProgramID, FragmentShaderID);
-
-	glDeleteShader(VertexShaderID);
-	glDeleteShader(FragmentShaderID);
-
-	return ProgramID;
-}
-
-void DrawMesh(Object3D mesh, GLuint shader, const glm::mat4& vp)
-{
-	const RenderBuffer renderBuffer = mesh.GetRenderBuffer();
-	glEnableVertexAttribArray(0);//vertex
-	glBindBuffer(GL_ARRAY_BUFFER, renderBuffer.vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderBuffer.ibo);
-	glVertexAttribPointer(
-		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized
-		8*sizeof(GLfloat),                  // stride
-		(void*)0            // array buffer offset
-	);
-	glEnableVertexAttribArray(1); //color
-	glVertexAttribPointer( 
-		1,                  
-		3,                
-		GL_FLOAT,          
-		GL_FALSE,          
-		8 * sizeof(GLfloat),              
-		(void*)(3 * sizeof(GLfloat)) 
-	);
-	glEnableVertexAttribArray(2); //uv
-	glVertexAttribPointer(
-		2,
-		2,               
-		GL_FLOAT,           
-		GL_FALSE,           
-		8 * sizeof(GLfloat),              
-		(void*)(6 * sizeof(GLfloat)) 
-	);
-	glUseProgram(shader);
-
-	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
-	glm::mat4 mvp = vp * mesh.GetTransform();
-	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(mvp));
-	glDrawElements(GL_TRIANGLE_STRIP, mesh.IndexSize(), GL_UNSIGNED_INT, (void*)0);
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
-}
 
 glm::mat4 ProjectionView() 
 {
@@ -235,10 +104,30 @@ glm::mat4 Model(float angle)
 	return Model;
 }
 
+void DrawRenderTarget(GLuint target)
+{
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, 0);
+
+}
+
+void DrawScene(const glm::mat4& vp, Renderer& renderer, const std::vector<Object3D*>& meshes, GLuint shader)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	for (Object3D* mesh : meshes)
+	{
+		renderer.DrawMesh(mesh, shader, vp);
+	}
+}
+
 int Render(GLFWwindow* window)
 {
-	ImageCustomLoader loader = ImageCustomLoader();
-	GLuint Texture = loader.LoadBMP_custom("imagemodel.bmp");
+	//ImageCustomLoader loader = ImageCustomLoader();
+	//GLuint Texture = loader.LoadBMP_custom("imagemodel.bmp");
+	Renderer renderer;
+	renderer.CreateTexture("imagemodel.bmp");
+
+
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
 	// Accept fragment if it closer to the camera than the former one
@@ -250,12 +139,20 @@ int Render(GLFWwindow* window)
 
 	Object3D mesh(cube_vertex_buffer_data, cube_indices);
 	Object3D plane(plane_vertex_buffer_data, plane_indices);
+	plane.SetScale(glm::vec3(2.f, 2.f, 2.f));
+	plane.Rotate(glm::vec3(1.f, 0.f, 0.f), glm::radians(180.f));
+	plane.Translate(glm::vec3(0.f, 1.5f, 0.f));
 
-	GLuint shader = CreateShader("vs.vert", "fs.frag");
+	mesh.SetTexture(renderer.GetTexture("imagemodel.bmp"));
+	Texture renderTarget = renderer.CreateRenderTarget("renderTarget", windowWidth, windowHeight);
+	plane.SetTexture(renderer.GetTexture("renderTarget"));
+
+	GLuint shader = renderer.CreateShader("vs.vert", "fs.frag");
 
 	float angle = 10.f;
 	glm::mat4 vp = ProjectionView();
 	double lastTime = glfwGetTime();
+	std::vector<Object3D*> meshes = { &mesh, &plane };
 
 	do 
 	{
@@ -263,13 +160,21 @@ int Render(GLFWwindow* window)
 		float deltaTime = float(currentTime - lastTime);
 		lastTime = currentTime;
 
+		mesh.Rotate(glm::vec3(0.f, 0.f, 1.f), glm::radians(angle * deltaTime));
+		plane.parentTransform = mesh.GetTransform();
+
 		vp = ComputeMatricesFromInputs(window, deltaTime);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, renderTarget.buffer);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderTarget.id, 0);
+		GLenum draws[1] = { GL_COLOR_ATTACHMENT0 };
 
-		mesh.Rotate(glm::vec3(0.f, 1.f, 0.f), glm::radians(angle * deltaTime));
+		glViewport(0, 0, windowWidth, windowHeight);
+		DrawScene(vp, renderer, { &mesh }, shader);
+		glDrawBuffers(1, draws);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		DrawMesh(mesh, shader, vp);
-		DrawMesh(plane, shader, vp);
+
+		DrawScene(vp, renderer, meshes, shader);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

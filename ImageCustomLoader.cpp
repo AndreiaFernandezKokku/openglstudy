@@ -68,4 +68,8 @@ GLuint ImageCustomLoader::LoadBMP_custom(const char* imagepath)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	// Generate mipmaps, by the way.
 	glGenerateMipmap(GL_TEXTURE_2D);
+
+	delete[] data;
+	data = nullptr;
+	return textureID;
 }

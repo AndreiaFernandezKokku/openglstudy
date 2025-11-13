@@ -144,11 +144,11 @@ int Render(GLFWwindow* window)
 	plane.Translate(glm::vec3(0.f, 1.5f, 0.f));
 	if (const Texture* t = renderer.GetTexture("imagemodel.bmp"))
 	{
-		mesh.SetTexture(t->id);
+		mesh.SetTexture(t->texId);
 	}
 	
 	RenderTexture renderTarget = renderer.CreateRenderTarget("renderTarget", windowWidth, windowHeight);
-	plane.SetTexture(renderTarget.id);
+	plane.SetTexture(renderTarget.texId);
 
 	GLuint shader = renderer.CreateShader("vs.vert", "fs.frag");
 
@@ -168,7 +168,7 @@ int Render(GLFWwindow* window)
 
 		vp = ComputeMatricesFromInputs(window, deltaTime);
 		glBindFramebuffer(GL_FRAMEBUFFER, renderTarget.frameBufferId);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderTarget.id, 0);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderTarget.texId, 0);
 		GLenum draws[1] = { GL_COLOR_ATTACHMENT0 };
 
 		glViewport(0, 0, windowWidth, windowHeight);

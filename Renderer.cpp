@@ -210,13 +210,13 @@ void Renderer::Dispose()
 
 	for (auto t : TexturePool)
 	{
-		glDeleteTextures(1, &t.second.id);
+		glDeleteTextures(1, &t.second.texId);
 	}
 	TexturePool.clear();
 
 	for (auto rt : RenderTexturePool)
 	{
-		glDeleteTextures(1, &rt.second.id);
+		glDeleteTextures(1, &rt.second.texId);
 		glDeleteBuffers(1, &rt.second.frameBufferId);
 	}
 	RenderTexturePool.clear();

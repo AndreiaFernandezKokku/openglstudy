@@ -47,13 +47,13 @@ struct Shader
 
 struct Texture
 {
-	GLuint id = 0;
+	GLuint texId = 0;
 	unsigned int Width = 0;
 	unsigned int Height = 0;
 
 	Texture(GLuint _id)
 	{
-		id = _id;	
+		texId = _id;	
 	}
 	Texture() = default;
 };

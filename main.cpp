@@ -80,7 +80,7 @@ static const std::vector<unsigned int> plane_indices =
 
 glm::mat4 ProjectionView() 
 {
-	// Projection matrix: 45° Field of View, 4:3 ratio, display range: 0.1 unit <-> 100 units
+	// Projection matrix: 45ï¿½ Field of View, 4:3 ratio, display range: 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 
 	// Camera matrix
@@ -142,10 +142,13 @@ int Render(GLFWwindow* window)
 	plane.SetScale(glm::vec3(2.f, 2.f, 2.f));
 	plane.Rotate(glm::vec3(1.f, 0.f, 0.f), glm::radians(180.f));
 	plane.Translate(glm::vec3(0.f, 1.5f, 0.f));
-
-	mesh.SetTexture(renderer.GetTexture("imagemodel.bmp"));
-	Texture renderTarget = renderer.CreateRenderTarget("renderTarget", windowWidth, windowHeight);
-	plane.SetTexture(renderer.GetTexture("renderTarget"));
+	if (const Texture* t = renderer.GetTexture("imagemodel.bmp"))
+	{
+		mesh.SetTexture(t->texId);
+	}
+	
+	RenderTexture renderTarget = renderer.CreateRenderTarget("renderTarget", windowWidth, windowHeight);
+	plane.SetTexture(renderTarget.texId);
 
 	GLuint shader = renderer.CreateShader("vs.vert", "fs.frag");
 
@@ -164,8 +167,8 @@ int Render(GLFWwindow* window)
 		plane.parentTransform = mesh.GetTransform();
 
 		vp = ComputeMatricesFromInputs(window, deltaTime);
-		glBindFramebuffer(GL_FRAMEBUFFER, renderTarget.buffer);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderTarget.id, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, renderTarget.frameBufferId);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderTarget.texId, 0);
 		GLenum draws[1] = { GL_COLOR_ATTACHMENT0 };
 
 		glViewport(0, 0, windowWidth, windowHeight);
@@ -181,8 +184,7 @@ int Render(GLFWwindow* window)
 	}
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
 		glfwWindowShouldClose(window) == 0);
-
-	glDeleteProgram(shader);
+	renderer.Dispose();
 	return 0;
 }
 

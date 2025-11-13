@@ -168,11 +168,11 @@ const Texture& Renderer::CreateTexture(std::string texturePath, std::string name
 	return TexturePool[name];
 }
 
-const Texture& Renderer::CreateRenderTarget(std::string name, GLuint width, GLuint height, GLuint glformat)
+const RenderTexture& Renderer::CreateRenderTarget(std::string name, GLuint width, GLuint height, GLuint glformat)
 {
-	if (TexturePool.count(name))
+	if (RenderTexturePool.count(name))
 	{
-		return TexturePool[name];
+		return RenderTexturePool[name];
 	}
 
 	GLuint renderTarget; 
@@ -186,11 +186,39 @@ const Texture& Renderer::CreateRenderTarget(std::string name, GLuint width, GLui
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	TexturePool[name] = Texture(renderTarget, renderBuffer);
-	return TexturePool[name];
+	RenderTexturePool[name] = RenderTexture(renderTarget, renderBuffer);
+	return RenderTexturePool[name];
 }
 
-GLuint Renderer::GetTexture(std::string name)
+const Texture *Renderer::GetTexture(std::string name) 
 {
-	return TexturePool.count(name) ? TexturePool[name].id : 0;
+	return TexturePool.count(name) ? &TexturePool[name] : nullptr;
+}
+
+const RenderTexture *Renderer::GetRenderTexture(std::string name) 
+{
+	return RenderTexturePool.count(name) ? &RenderTexturePool[name] : nullptr;
+}
+
+void Renderer::Dispose()
+{
+	for (auto s : ShaderPool)
+	{
+		glDeleteProgram(s.second.id);
+	}
+	ShaderPool.clear();
+
+	for (auto t : TexturePool)
+	{
+		glDeleteTextures(1, &t.second.texId);
+	}
+	TexturePool.clear();
+
+	for (auto rt : RenderTexturePool)
+	{
+		glDeleteTextures(1, &rt.second.texId);
+		glDeleteBuffers(1, &rt.second.frameBufferId);
+	}
+	RenderTexturePool.clear();
+
 }

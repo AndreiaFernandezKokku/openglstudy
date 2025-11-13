@@ -128,6 +128,7 @@
   <ItemGroup>
     <ClCompile Include="common\Controls.cpp" />
     <ClCompile Include="common\objloader.cpp" />
+    <ClCompile Include="common\Sphere.cpp" />
     <ClCompile Include="ImageCustomLoader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Object3D.cpp" />
@@ -140,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="common\Controls.h" />
     <ClInclude Include="common\objloader.h" />
+    <ClInclude Include="common\Sphere.h" />
     <ClInclude Include="ImageCustomLoader.h" />
     <ClInclude Include="Object3D.h" />
     <ClInclude Include="Renderer.h" />

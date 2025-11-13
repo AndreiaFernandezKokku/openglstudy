@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "common/Sphere.h"
+#include <memory>
 
 struct Vertex
 {
@@ -76,20 +78,57 @@ struct RenderTexture : public Texture
 
 class Object3D; //fwd declaration
 
+static Sphere lightSphere(0.0125f);
+
+class BaseLight 
+{
+public:
+	glm::vec3 Position;
+	glm::vec3 Color;
+};
+
+class PointLight : public BaseLight
+{
+public:
+	float constant = 1.0f;
+	float linear = 0.22f;
+    float quadratic = 0.20f;
+};
+
+class AmbientLight : public BaseLight
+{
+};
+
+class DirectionalLight : public BaseLight
+{
+public:
+	float Intensity;
+	glm::vec3 Rotation;
+};
+
 class Renderer
 {
 protected:
 	std::map<std::string, Shader> ShaderPool;
 	std::map<std::string, Texture> TexturePool;
 	std::map<std::string, RenderTexture> RenderTexturePool;
+	AmbientLight _AmbientLight;
+	DirectionalLight _DirectionalLight;
+	std::vector<PointLight> _PointLights;
+	GLuint PointLightsUniformBufferObjectId;
 
 public:
+	void Initialize();
+	void UploadLightData();
 	void DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp);
+	void PrepareLights(GLuint shader);
 	GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path);
 	const Texture& CreateTexture(std::string texturePath, std::string name = "");
 	const RenderTexture& CreateRenderTarget(std::string name, GLuint width, GLuint height, GLuint glformat = GL_RGB);
 	const Texture* GetTexture(std::string name);
 	const RenderTexture* GetRenderTexture(std::string name);
+	void AddPointLight(glm::vec3 position, glm::vec3 color, float intensity);
+	void SetAmbientLight(glm::vec3 color);
+	void SetDirectionalLight(glm::vec3 color, float intensity, glm::vec3 rotation);
 	void Dispose();
 };
-

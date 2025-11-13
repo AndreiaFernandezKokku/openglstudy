@@ -125,6 +125,7 @@ int Render(GLFWwindow* window)
 	//ImageCustomLoader loader = ImageCustomLoader();
 	//GLuint Texture = loader.LoadBMP_custom("imagemodel.bmp");
 	Renderer renderer;
+	renderer.Initialize();
 	renderer.CreateTexture("imagemodel.bmp");
 
 
@@ -156,9 +157,13 @@ int Render(GLFWwindow* window)
 	glm::mat4 vp = ProjectionView();
 	double lastTime = glfwGetTime();
 	std::vector<Object3D*> meshes = { &mesh, &plane };
+	
+	renderer.SetAmbientLight(glm::vec3(0.f, 0.2f, 0.2f));
+	renderer.AddPointLight(glm::vec3(0.f, 2.f, 0.f), glm::vec3(1.f, 1.f, 1.f), 2.f);
 
 	do 
 	{
+		renderer.UploadLightData();
 		double currentTime = glfwGetTime();
 		float deltaTime = float(currentTime - lastTime);
 		lastTime = currentTime;

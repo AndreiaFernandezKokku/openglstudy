@@ -7,6 +7,17 @@
 #include <sstream>
 #include "ImageCustomLoader.h"
 
+void Renderer::Initialize()
+{
+	glGenBuffers(1, &PointLightsUniformBufferObjectId);
+}
+
+void Renderer::UploadLightData()
+{
+	glBindBuffer(GL_UNIFORM_BUFFER, PointLightsUniformBufferObjectId);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLight) * _PointLights.size(), &_PointLights[0], GL_DYNAMIC_DRAW);
+}
+
 void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp)
 {
 	const RenderBuffer renderBuffer = mesh->GetRenderBuffer();
@@ -44,6 +55,13 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
 	glm::mat4 mvp = vp * mesh->GetTransform();
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(mvp));
+
+	PrepareLights(shader);
+
+	GLuint pointLightsId = glGetUniformBlockIndex(shader, "myPointLight");
+	glUniformBlockBinding(shader, pointLightsId, 0);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, PointLightsUniformBufferObjectId);
+
 	glBindTexture(GL_TEXTURE_2D, mesh->GetTexture());
 	glDrawElements(GL_TRIANGLE_STRIP, mesh->IndexSize(), GL_UNSIGNED_INT, (void*)0);
 	glDisableVertexAttribArray(0);
@@ -51,6 +69,13 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 	glDisableVertexAttribArray(2);
 }
 
+void Renderer::PrepareLights(GLuint shader)
+{
+	GLuint LightID = glGetUniformLocation(shader, "myAmbientLight.Color");
+	glUniform3fv(LightID, 1, glm::value_ptr(_AmbientLight.Color));
+	GLuint numLightsID = glGetUniformLocation(shader, "numLights");
+	glUniform1i(numLightsID, _PointLights.size());
+}
 
 //fragment shader == pixel shader
 GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path)
@@ -198,6 +223,27 @@ const Texture *Renderer::GetTexture(std::string name)
 const RenderTexture *Renderer::GetRenderTexture(std::string name) 
 {
 	return RenderTexturePool.count(name) ? &RenderTexturePool[name] : nullptr;
+}
+
+void Renderer::AddPointLight(glm::vec3 position, glm::vec3 color, float intensity)
+{
+	PointLight _light;
+	_light.Color = color;
+	_light.Position = position;
+
+	_PointLights.emplace_back(_light);
+}
+
+void Renderer::SetAmbientLight(glm::vec3 color)
+{
+	_AmbientLight.Color = color;
+}
+
+void Renderer::SetDirectionalLight(glm::vec3 color, float intensity, glm::vec3 rotation)
+{
+	_DirectionalLight.Color = color;
+	_DirectionalLight.Intensity = intensity;
+	_DirectionalLight.Rotation = rotation;
 }
 
 void Renderer::Dispose()

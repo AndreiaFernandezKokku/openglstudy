@@ -109,6 +109,12 @@ public:
 	glm::vec3 Rotation;
 };
 
+struct Material 
+{
+	Texture* texture = nullptr;
+	Shader* shader = nullptr;
+};
+
 class Renderer
 {
 protected:
@@ -123,7 +129,7 @@ protected:
 public:
 	void Initialize();
 	void UploadLightData();
-	void DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp, bool useLights = true);
+	void DrawMesh(const Object3D* mesh, const glm::mat4& vp, bool useLights = true);
 	void PrepareLights(GLuint shader);
 	GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName = "");
 	const Texture& CreateTexture(std::string texturePath, std::string name = "");
@@ -133,6 +139,7 @@ public:
 	void AddPointLight(glm::vec3 position, glm::vec3 color, float intensity);
 	void SetAmbientLight(glm::vec3 color);
 	void SetDirectionalLight(glm::vec3 color, float intensity, glm::vec3 rotation);
+	const Shader* GetShader(std::string shaderName);
 	void Dispose();
 
 	//Debugging

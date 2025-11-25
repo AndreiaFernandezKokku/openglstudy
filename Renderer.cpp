@@ -38,7 +38,8 @@ void Renderer::Initialize()
 			indices.push_back(idx[j]);
 		}
 		debugLightSphere.CreateBuffer(vertices, indices);
-		debugLightSphere.SetTexture(t.texId);
+		debugLightSphere.SetTexture(&t);
+		debugLightSphere.SetShader(&sh);
 	}
 
 }
@@ -50,7 +51,7 @@ void Renderer::UploadLightData()
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PointLight)* _PointLights.size(), &_PointLights[0]);
 }
 
-void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp, bool useLights)
+void Renderer::DrawMesh(const Object3D* mesh, const glm::mat4& vp, bool useLights)
 {
 	const RenderBuffer renderBuffer = mesh->GetRenderBuffer();
 	glEnableVertexAttribArray(0);//vertex
@@ -91,6 +92,8 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 		11 * sizeof(GLfloat),
 		(void*)(9 * sizeof(GLfloat))
 	);
+	GLuint shader = mesh->GetShader();
+
 	glUseProgram(shader);
 
 	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
@@ -296,6 +299,15 @@ void Renderer::SetDirectionalLight(glm::vec3 color, float intensity, glm::vec3 r
 	_DirectionalLight.Rotation = rotation;
 }
 
+const Shader* Renderer::GetShader(std::string shaderName)
+{
+	if (ShaderPool.find(shaderName) != ShaderPool.end()) 
+	{
+		return &ShaderPool[shaderName];
+	}
+	return nullptr;
+}
+
 void Renderer::Dispose()
 {
 	for (auto s : ShaderPool)
@@ -325,6 +337,6 @@ void Renderer::DrawDebugLights(const glm::mat4 &vp)
 	for (const PointLight& l : _PointLights)
 	{
 		debugLightSphere.SetPos(l.Position);
-		DrawMesh(&debugLightSphere, ShaderPool["unlit"].id, vp, false);
+		DrawMesh(&debugLightSphere, vp, false);
 	}
 }

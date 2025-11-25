@@ -138,8 +138,8 @@ int Render(GLFWwindow* window)
 	//instead of back face culling, we do front face culling due to the nature of the instantiated cube
 	glCullFace(GL_FRONT);
 
-	GLuint shader = renderer.CreateShader("vs.vert", "fs.frag", "default");
-	GLuint unlitShader = renderer.CreateShader("vs.vert", "unlitTexture.frag", "unlitTexture");
+	renderer.CreateShader("vs.vert", "fs.frag", "default");
+	renderer.CreateShader("vs.vert", "unlitTexture.frag", "unlitTexture");
 
 	Object3D mesh(cube_vertex_buffer_data, cube_indices);
 	if (const Texture* t = renderer.GetTexture("imagemodel.bmp"))
@@ -181,15 +181,25 @@ int Render(GLFWwindow* window)
 		GLenum draws[1] = { GL_COLOR_ATTACHMENT0 };
 
 		glViewport(0, 0, windowWidth, windowHeight);
-		DrawScene(vp, renderer, { &mesh });
+		DrawScene(ProjectionView(), renderer, {&mesh});
+
+		glDisable(GL_CULL_FACE);
+		debugLightSphere.SetShader(renderer.GetShader("unlit"));
+		renderer.DrawDebugLights(ProjectionView());
+		glEnable(GL_CULL_FACE);
+
 		glDrawBuffers(1, draws);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
 		DrawScene(vp, renderer, meshes);
+
 		glDisable(GL_CULL_FACE);
+		debugLightSphere.SetTexture(renderer.GetTexture("imagemodel.bmp"));
+		debugLightSphere.SetShader(renderer.GetShader("default"));
 		renderer.DrawDebugLights(vp);
 		glEnable(GL_CULL_FACE);
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

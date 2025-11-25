@@ -19,9 +19,9 @@ void Renderer::Initialize()
 
 	if (!debugLightSphere.IsInitialized())
 	{
-		const Texture& t = CreateTexture("notex.bmp", "default");
-		const Shader& sh = CreateShader("vs.vert", "unlit.frag", "unlit");
-		Sphere s(1.f);
+		CreateTexture("notex.bmp", "default");
+		CreateShader("vs.vert", "unlit.frag", "unlit");
+		Sphere s(0.15f);
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
 		vertices.reserve(s.getVertexCount());
@@ -38,8 +38,8 @@ void Renderer::Initialize()
 			indices.push_back(idx[j]);
 		}
 		debugLightSphere.CreateBuffer(vertices, indices);
-		debugLightSphere.SetTexture(&t);
-		debugLightSphere.SetShader(&sh);
+		debugLightSphere.SetTexture(GetTexture("default"));
+		debugLightSphere.SetShader(GetShader("unlit"));
 	}
 
 }
@@ -127,7 +127,7 @@ void Renderer::PrepareLights(GLuint shader)
 }
 
 //fragment shader == pixel shader
-GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName)
+bool Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName)
 {
 	std::string hash = shaderName;
 	if (hash.size() == 0)
@@ -138,7 +138,7 @@ GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment
 	}
 	if (ShaderPool.count(hash)) 
 	{
-		return ShaderPool[hash].id;
+		return true;
 	}
 	// Create the shaders
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -156,7 +156,7 @@ GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment
 	else {
 		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
 		getchar();
-		return 0;
+		return false;
 	}
 
 	// Read the Fragment Shader code from the file
@@ -226,10 +226,10 @@ GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment
 
 	ShaderPool[hash] = Shader(ProgramID);
 
-	return ProgramID;
+	return true;
 }
 
-const Texture& Renderer::CreateTexture(std::string texturePath, std::string name)
+bool Renderer::CreateTexture(std::string texturePath, std::string name)
 {
 	if (name.size() == 0)
 	{
@@ -237,13 +237,13 @@ const Texture& Renderer::CreateTexture(std::string texturePath, std::string name
 	}
 	if (TexturePool.count(name))
 	{
-		return TexturePool[name];
+		return true;
 	}
 	ImageCustomLoader loader = ImageCustomLoader();
 	GLuint texture = loader.LoadBMP_custom("imagemodel.bmp");
 	glBindTexture(GL_TEXTURE_2D, 0);
 	TexturePool[name] = Texture(texture);
-	return TexturePool[name];
+	return texture != 0;
 }
 
 const RenderTexture& Renderer::CreateRenderTarget(std::string name, GLuint width, GLuint height, GLuint glformat)
@@ -333,7 +333,6 @@ void Renderer::Dispose()
 
 void Renderer::DrawDebugLights(const glm::mat4 &vp)
 {
-	
 	for (const PointLight& l : _PointLights)
 	{
 		debugLightSphere.SetPos(l.Position);

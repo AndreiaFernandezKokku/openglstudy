@@ -131,8 +131,8 @@ public:
 	void UploadLightData();
 	void DrawMesh(const Object3D* mesh, const glm::mat4& vp, bool useLights = true);
 	void PrepareLights(GLuint shader);
-	GLuint CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName = "");
-	const Texture& CreateTexture(std::string texturePath, std::string name = "");
+	bool CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName = "");
+	bool CreateTexture(std::string texturePath, std::string name = "");
 	const RenderTexture& CreateRenderTarget(std::string name, GLuint width, GLuint height, GLuint glformat = GL_RGB);
 	const Texture* GetTexture(std::string name);
 	const RenderTexture* GetRenderTexture(std::string name);
@@ -145,3 +145,5 @@ public:
 	//Debugging
 	void DrawDebugLights(const glm::mat4 &vp);
 };
+
+extern Object3D debugLightSphere;

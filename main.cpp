@@ -27,8 +27,8 @@ bool InitializeGLFW()
 GLFWwindow* OpenGLWindow()
 {
 	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // We want OpenGL 4.2
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL 
 
@@ -151,7 +151,7 @@ int Render(GLFWwindow* window)
 	RenderTexture renderTarget = renderer.CreateRenderTarget("renderTarget", windowWidth, windowHeight);
 	plane.SetTexture(renderTarget.texId);
 
-	GLuint shader = renderer.CreateShader("vs.vert", "fs.frag");
+	GLuint shader = renderer.CreateShader("vs.vert", "fs.frag","default");
 
 	float angle = 10.f;
 	glm::mat4 vp = ProjectionView();
@@ -182,8 +182,10 @@ int Render(GLFWwindow* window)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-		DrawScene(vp, renderer, meshes, shader);
-
+		//DrawScene(vp, renderer, meshes, shader);
+		glDisable(GL_CULL_FACE);
+		renderer.DrawDebugLights(vp);
+		glEnable(GL_CULL_FACE);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

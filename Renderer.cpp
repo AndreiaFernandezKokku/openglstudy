@@ -7,18 +7,50 @@
 #include <sstream>
 #include "ImageCustomLoader.h"
 
+const unsigned int MAX_LIGHTS = 32;
+Object3D debugLightSphere;
+
 void Renderer::Initialize()
 {
 	glGenBuffers(1, &PointLightsUniformBufferObjectId);
+	glBindBuffer(GL_UNIFORM_BUFFER, PointLightsUniformBufferObjectId);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLight) * MAX_LIGHTS, nullptr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	if (!debugLightSphere.IsInitialized())
+	{
+		const Texture& t = CreateTexture("notex.bmp", "default");
+		const Shader& sh = CreateShader("vs.vert", "unlit.frag", "unlit");
+		Sphere s(1.f);
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+		vertices.reserve(s.getVertexCount());
+		indices.reserve(s.getIndexCount());
+		const float* verts = s.getVertices();
+		const unsigned int* idx = s.getIndices();
+		for (int i = 0; i < s.getVertexSize() * 3; i += 3)
+		{
+			Vertex v(verts[i], verts[i + 1], verts[i + 2]);
+			vertices.emplace_back(v);
+		}
+		for (int j = 0; j < s.getIndexCount(); ++j)
+		{
+			indices.push_back(idx[j]);
+		}
+		debugLightSphere.CreateBuffer(vertices, indices);
+		debugLightSphere.SetTexture(t.texId);
+	}
+
 }
 
 void Renderer::UploadLightData()
 {
 	glBindBuffer(GL_UNIFORM_BUFFER, PointLightsUniformBufferObjectId);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLight) * _PointLights.size(), &_PointLights[0], GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, PointLightsUniformBufferObjectId);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PointLight)* _PointLights.size(), &_PointLights[0]);
 }
 
-void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp)
+void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp, bool useLights)
 {
 	const RenderBuffer renderBuffer = mesh->GetRenderBuffer();
 	glEnableVertexAttribArray(0);//vertex
@@ -55,18 +87,23 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
 	glm::mat4 mvp = vp * mesh->GetTransform();
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(mvp));
+	if (useLights)
+	{
+		PrepareLights(shader);
 
-	PrepareLights(shader);
-
-	GLuint pointLightsId = glGetUniformBlockIndex(shader, "myPointLight");
-	glUniformBlockBinding(shader, pointLightsId, 0);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, PointLightsUniformBufferObjectId);
+		GLuint pointLightsId = glGetUniformBlockIndex(shader, "myPointLights");
+		glUniformBlockBinding(shader, pointLightsId, 0);
+		glBindBuffer(GL_UNIFORM_BUFFER, PointLightsUniformBufferObjectId);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, PointLightsUniformBufferObjectId);
+	}
 
 	glBindTexture(GL_TEXTURE_2D, mesh->GetTexture());
 	glDrawElements(GL_TRIANGLE_STRIP, mesh->IndexSize(), GL_UNSIGNED_INT, (void*)0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Renderer::PrepareLights(GLuint shader)
@@ -78,11 +115,15 @@ void Renderer::PrepareLights(GLuint shader)
 }
 
 //fragment shader == pixel shader
-GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path)
+GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName)
 {
-	std::string hash = vertex_file_path;
-	hash.append("|");
-	hash.append(fragment_file_path);
+	std::string hash = shaderName;
+	if (hash.size() == 0)
+	{
+		hash = vertex_file_path;
+		hash.append("|");
+		hash.append(fragment_file_path);
+	}
 	if (ShaderPool.count(hash)) 
 	{
 		return ShaderPool[hash].id;
@@ -267,4 +308,14 @@ void Renderer::Dispose()
 	}
 	RenderTexturePool.clear();
 
+}
+
+void Renderer::DrawDebugLights(const glm::mat4 &vp)
+{
+	
+	for (const PointLight& l : _PointLights)
+	{
+		debugLightSphere.SetPos(l.Position);
+		DrawMesh(&debugLightSphere, ShaderPool["unlit"].id, vp, false);
+	}
 }

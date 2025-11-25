@@ -2,8 +2,9 @@
 
 // Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec3 vertexPosition_modelspace;
-layout(location = 1) in vec3 vertexColor;
-layout(location = 2) in vec2 uv;
+layout(location = 1) in vec3 vertexNormal;
+layout(location = 2) in vec3 vertexColor;
+layout(location = 3) in vec2 uv;
 
 // Output data ; will be interpolated for each fragment.
 layout(location = 0) out vec4 fragPos;
@@ -22,5 +23,6 @@ void main()
     // UV of the vertex. No special space for this one.
     UV = uv;
     color = vertexColor;
-    normal = normalize(fragPos.xyz);
+    normal = normalize(vertexNormal);
+    gl_Position = fragPos;
 }

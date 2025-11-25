@@ -61,26 +61,35 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 		3,                  // size
 		GL_FLOAT,           // type
 		GL_FALSE,           // normalized
-		8 * sizeof(GLfloat),                  // stride
+		11 * sizeof(GLfloat),                  // stride
 		(void*)0            // array buffer offset
 	);
-	glEnableVertexAttribArray(1); //color
+	glEnableVertexAttribArray(1); //normal
 	glVertexAttribPointer(
 		1,
 		3,
 		GL_FLOAT,
 		GL_FALSE,
-		8 * sizeof(GLfloat),
+		11 * sizeof(GLfloat),
 		(void*)(3 * sizeof(GLfloat))
 	);
-	glEnableVertexAttribArray(2); //uv
+	glEnableVertexAttribArray(2); //color
 	glVertexAttribPointer(
 		2,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		11 * sizeof(GLfloat),
+		(void*)(6 * sizeof(GLfloat))
+	);
+	glEnableVertexAttribArray(3); //uv
+	glVertexAttribPointer(
+		3,
 		2,
 		GL_FLOAT,
 		GL_FALSE,
-		8 * sizeof(GLfloat),
-		(void*)(6 * sizeof(GLfloat))
+		11 * sizeof(GLfloat),
+		(void*)(9 * sizeof(GLfloat))
 	);
 	glUseProgram(shader);
 
@@ -98,7 +107,7 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 	}
 
 	glBindTexture(GL_TEXTURE_2D, mesh->GetTexture());
-	glDrawElements(GL_TRIANGLE_STRIP, mesh->IndexSize(), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(renderBuffer.drawMode, mesh->IndexSize(), GL_UNSIGNED_INT, (void*)0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);

@@ -13,6 +13,7 @@
 struct Vertex
 {
 	glm::vec3 pos;
+	glm::vec3 normal;
 	glm::vec3 color;
 	glm::vec2 uvCord;
 
@@ -21,6 +22,7 @@ struct Vertex
 		pos.x = x;
 		pos.y = y;
 		pos.z = z;
+		normal = glm::normalize(pos);
 		color.r = r;
 		color.g = g;
 		color.b = b;
@@ -34,6 +36,7 @@ struct RenderBuffer
 	GLuint vbo; //vertex buffer object
 	GLuint ibo; //index buffer object
 	unsigned int elementCount;
+	GLenum drawMode = GL_TRIANGLE_STRIP;
 };
 
 struct Shader

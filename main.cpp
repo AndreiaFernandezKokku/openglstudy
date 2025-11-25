@@ -182,7 +182,7 @@ int Render(GLFWwindow* window)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-		//DrawScene(vp, renderer, meshes, shader);
+		DrawScene(vp, renderer, meshes, shader);
 		glDisable(GL_CULL_FACE);
 		renderer.DrawDebugLights(vp);
 		glEnable(GL_CULL_FACE);

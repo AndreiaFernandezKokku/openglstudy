@@ -110,13 +110,13 @@ void DrawRenderTarget(GLuint target)
 
 }
 
-void DrawScene(const glm::mat4& vp, Renderer& renderer, const std::vector<Object3D*>& meshes, GLuint shader)
+void DrawScene(const glm::mat4& vp, Renderer& renderer, const std::vector<Object3D*>& meshes)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	for (Object3D* mesh : meshes)
 	{
-		renderer.DrawMesh(mesh, shader, vp);
+		renderer.DrawMesh(mesh, vp);
 	}
 }
 
@@ -138,20 +138,24 @@ int Render(GLFWwindow* window)
 	//instead of back face culling, we do front face culling due to the nature of the instantiated cube
 	glCullFace(GL_FRONT);
 
+	renderer.CreateShader("vs.vert", "fs.frag", "default");
+	renderer.CreateShader("vs.vert", "unlitTexture.frag", "unlitTexture");
+
 	Object3D mesh(cube_vertex_buffer_data, cube_indices);
+	if (const Texture* t = renderer.GetTexture("imagemodel.bmp"))
+	{
+		mesh.SetTexture(t);
+	}
+	mesh.SetShader(renderer.GetShader("default"));
+
 	Object3D plane(plane_vertex_buffer_data, plane_indices);
 	plane.SetScale(glm::vec3(2.f, 2.f, 2.f));
 	plane.Rotate(glm::vec3(1.f, 0.f, 0.f), glm::radians(180.f));
 	plane.Translate(glm::vec3(0.f, 1.5f, 0.f));
-	if (const Texture* t = renderer.GetTexture("imagemodel.bmp"))
-	{
-		mesh.SetTexture(t->texId);
-	}
 	
 	RenderTexture renderTarget = renderer.CreateRenderTarget("renderTarget", windowWidth, windowHeight);
-	plane.SetTexture(renderTarget.texId);
-
-	GLuint shader = renderer.CreateShader("vs.vert", "fs.frag","default");
+	plane.SetTexture(&renderTarget);
+	plane.SetShader(renderer.GetShader("unlitTexture"));
 
 	float angle = 10.f;
 	glm::mat4 vp = ProjectionView();
@@ -177,15 +181,25 @@ int Render(GLFWwindow* window)
 		GLenum draws[1] = { GL_COLOR_ATTACHMENT0 };
 
 		glViewport(0, 0, windowWidth, windowHeight);
-		DrawScene(vp, renderer, { &mesh }, shader);
+		DrawScene(ProjectionView(), renderer, {&mesh});
+
+		glDisable(GL_CULL_FACE);
+		debugLightSphere.SetShader(renderer.GetShader("unlit"));
+		renderer.DrawDebugLights(ProjectionView());
+		glEnable(GL_CULL_FACE);
+
 		glDrawBuffers(1, draws);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		DrawScene(vp, renderer, meshes);
 
-		//DrawScene(vp, renderer, meshes, shader);
 		glDisable(GL_CULL_FACE);
+		debugLightSphere.SetTexture(renderer.GetTexture("imagemodel.bmp"));
+		debugLightSphere.SetShader(renderer.GetShader("default"));
 		renderer.DrawDebugLights(vp);
 		glEnable(GL_CULL_FACE);
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

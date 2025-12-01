@@ -19,9 +19,9 @@ void Renderer::Initialize()
 
 	if (!debugLightSphere.IsInitialized())
 	{
-		const Texture& t = CreateTexture("notex.bmp", "default");
-		const Shader& sh = CreateShader("vs.vert", "unlit.frag", "unlit");
-		Sphere s(1.f);
+		CreateTexture("notex.bmp", "default");
+		CreateShader("vs.vert", "unlit.frag", "unlit");
+		Sphere s(0.15f);
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
 		vertices.reserve(s.getVertexCount());
@@ -38,7 +38,8 @@ void Renderer::Initialize()
 			indices.push_back(idx[j]);
 		}
 		debugLightSphere.CreateBuffer(vertices, indices);
-		debugLightSphere.SetTexture(t.texId);
+		debugLightSphere.SetTexture(GetTexture("default"));
+		debugLightSphere.SetShader(GetShader("unlit"));
 	}
 
 }
@@ -50,7 +51,7 @@ void Renderer::UploadLightData()
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PointLight)* _PointLights.size(), &_PointLights[0]);
 }
 
-void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp, bool useLights)
+void Renderer::DrawMesh(const Object3D* mesh, const glm::mat4& vp, bool useLights)
 {
 	const RenderBuffer renderBuffer = mesh->GetRenderBuffer();
 	glEnableVertexAttribArray(0);//vertex
@@ -61,27 +62,38 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 		3,                  // size
 		GL_FLOAT,           // type
 		GL_FALSE,           // normalized
-		8 * sizeof(GLfloat),                  // stride
+		11 * sizeof(GLfloat),                  // stride
 		(void*)0            // array buffer offset
 	);
-	glEnableVertexAttribArray(1); //color
+	glEnableVertexAttribArray(1); //normal
 	glVertexAttribPointer(
 		1,
 		3,
 		GL_FLOAT,
 		GL_FALSE,
-		8 * sizeof(GLfloat),
+		11 * sizeof(GLfloat),
 		(void*)(3 * sizeof(GLfloat))
 	);
-	glEnableVertexAttribArray(2); //uv
+	glEnableVertexAttribArray(2); //color
 	glVertexAttribPointer(
 		2,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		11 * sizeof(GLfloat),
+		(void*)(6 * sizeof(GLfloat))
+	);
+	glEnableVertexAttribArray(3); //uv
+	glVertexAttribPointer(
+		3,
 		2,
 		GL_FLOAT,
 		GL_FALSE,
-		8 * sizeof(GLfloat),
-		(void*)(6 * sizeof(GLfloat))
+		11 * sizeof(GLfloat),
+		(void*)(9 * sizeof(GLfloat))
 	);
+	GLuint shader = mesh->GetShader();
+
 	glUseProgram(shader);
 
 	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
@@ -98,7 +110,7 @@ void Renderer::DrawMesh(const Object3D* mesh, GLuint shader, const glm::mat4& vp
 	}
 
 	glBindTexture(GL_TEXTURE_2D, mesh->GetTexture());
-	glDrawElements(GL_TRIANGLE_STRIP, mesh->IndexSize(), GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(renderBuffer.drawMode, mesh->IndexSize(), GL_UNSIGNED_INT, (void*)0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
@@ -115,7 +127,7 @@ void Renderer::PrepareLights(GLuint shader)
 }
 
 //fragment shader == pixel shader
-GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName)
+bool Renderer::CreateShader(std::string vertex_file_path, std::string fragment_file_path, std::string shaderName)
 {
 	std::string hash = shaderName;
 	if (hash.size() == 0)
@@ -126,7 +138,7 @@ GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment
 	}
 	if (ShaderPool.count(hash)) 
 	{
-		return ShaderPool[hash].id;
+		return true;
 	}
 	// Create the shaders
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -144,7 +156,7 @@ GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment
 	else {
 		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
 		getchar();
-		return 0;
+		return false;
 	}
 
 	// Read the Fragment Shader code from the file
@@ -214,10 +226,10 @@ GLuint Renderer::CreateShader(std::string vertex_file_path, std::string fragment
 
 	ShaderPool[hash] = Shader(ProgramID);
 
-	return ProgramID;
+	return true;
 }
 
-const Texture& Renderer::CreateTexture(std::string texturePath, std::string name)
+bool Renderer::CreateTexture(std::string texturePath, std::string name)
 {
 	if (name.size() == 0)
 	{
@@ -225,13 +237,13 @@ const Texture& Renderer::CreateTexture(std::string texturePath, std::string name
 	}
 	if (TexturePool.count(name))
 	{
-		return TexturePool[name];
+		return true;
 	}
 	ImageCustomLoader loader = ImageCustomLoader();
 	GLuint texture = loader.LoadBMP_custom("imagemodel.bmp");
 	glBindTexture(GL_TEXTURE_2D, 0);
 	TexturePool[name] = Texture(texture);
-	return TexturePool[name];
+	return texture != 0;
 }
 
 const RenderTexture& Renderer::CreateRenderTarget(std::string name, GLuint width, GLuint height, GLuint glformat)
@@ -287,6 +299,15 @@ void Renderer::SetDirectionalLight(glm::vec3 color, float intensity, glm::vec3 r
 	_DirectionalLight.Rotation = rotation;
 }
 
+const Shader* Renderer::GetShader(std::string shaderName)
+{
+	if (ShaderPool.find(shaderName) != ShaderPool.end()) 
+	{
+		return &ShaderPool[shaderName];
+	}
+	return nullptr;
+}
+
 void Renderer::Dispose()
 {
 	for (auto s : ShaderPool)
@@ -312,10 +333,9 @@ void Renderer::Dispose()
 
 void Renderer::DrawDebugLights(const glm::mat4 &vp)
 {
-	
 	for (const PointLight& l : _PointLights)
 	{
 		debugLightSphere.SetPos(l.Position);
-		DrawMesh(&debugLightSphere, ShaderPool["unlit"].id, vp, false);
+		DrawMesh(&debugLightSphere, vp, false);
 	}
 }

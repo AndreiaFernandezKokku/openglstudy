@@ -4,9 +4,9 @@
 class Object3D
 {
 protected:
-	glm::mat4 transform;
+	glm::mat4 transform = glm::mat4(1.f);
 	RenderBuffer renderBuffer;
-	GLuint texture;
+	Material material;
 
 public:
 	glm::mat4 parentTransform = glm::mat4(1.f);
@@ -23,8 +23,10 @@ public:
 	const RenderBuffer& GetRenderBuffer() const { return renderBuffer; }
 	const glm::mat4& GetTransform() const { return parentTransform * transform; }
 	unsigned int IndexSize() const { return renderBuffer.elementCount; }
-	void SetTexture(GLuint textureID);
-	const GLuint GetTexture() const { return texture; }
+	void SetTexture(const Texture* _texture);
+	void SetShader(const Shader* _shader);
+	const GLuint GetTexture() const { return material.texture == nullptr ? (GLuint)0 : material.texture->texId; }
+	const GLuint GetShader() const { return material.shader == nullptr ? (GLuint)0 : material.shader->id; }
 	bool IsInitialized() const { return renderBuffer.elementCount < 0;  }
 
 };

@@ -35,14 +35,13 @@ layout (std140) uniform Lights
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 Pos) 
 {
     vec3 lightDir = normalize(light.position - Pos);
-    vec3 ambient = light.color * myAmbientLight.Color; // Assuming a material struct
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = light.color * diff * texture( myTextureSampler, UV ).rgb;
     vec3 reflectDir = reflect(-lightDir, normal);
 
     float distance = length(light.position - Pos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-    return (ambient + diffuse) * attenuation;
+    return diffuse * attenuation;
 }
 
 void main()

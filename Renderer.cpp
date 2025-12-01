@@ -30,7 +30,8 @@ void Renderer::Initialize()
 		const unsigned int* idx = s.getIndices();
 		for (int i = 0; i < s.getVertexSize() * 3; i += 3)
 		{
-			Vertex v(verts[i], verts[i + 1], verts[i + 2]);
+			glm::vec3 pos = glm::vec3(verts[i], verts[i + 1], verts[i + 2]);
+			Vertex v{ pos , glm::normalize(pos), glm::vec3(1,1,1), glm::vec2(0,0)};
 			vertices.emplace_back(v);
 		}
 		for (int j = 0; j < s.getIndexCount(); ++j)
@@ -97,13 +98,17 @@ void Renderer::DrawMesh(const Object3D* mesh, const glm::mat4& vp, bool useLight
 	glUseProgram(shader);
 
 	GLuint MatrixID = glGetUniformLocation(shader, "MVP");
-	glm::mat4 mvp = vp * mesh->GetTransform();
+	GLuint ModelID = glGetUniformLocation(shader, "Model_transform");
+	glm::mat4 meshTransform = mesh->GetTransform();
+	glm::mat4 mvp = vp * meshTransform;
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, glm::value_ptr(mvp));
+	glUniformMatrix4fv(ModelID, 1, GL_FALSE, glm::value_ptr(meshTransform));
+
 	if (useLights)
 	{
 		PrepareLights(shader);
 
-		GLuint pointLightsId = glGetUniformBlockIndex(shader, "myPointLights");
+		GLuint pointLightsId = glGetUniformBlockIndex(shader, "Lights");
 		glUniformBlockBinding(shader, pointLightsId, 0);
 		glBindBuffer(GL_UNIFORM_BUFFER, PointLightsUniformBufferObjectId);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, PointLightsUniformBufferObjectId);

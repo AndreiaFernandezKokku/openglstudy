@@ -14,15 +14,16 @@ layout(location = 3) out vec3 color;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
+uniform mat4 Model_transform;
 
 void main() 
 {
     // Output position of the vertex, in clip space : MVP * position
     //gl_Position =  MVP * vec4(vertexPosition_modelspace,1);
-    fragPos = MVP * vec4(vertexPosition_modelspace,1);
+    fragPos = Model_transform * vec4(vertexPosition_modelspace,1);
     // UV of the vertex. No special space for this one.
     UV = uv;
     color = vertexColor;
-    normal = normalize(vertexNormal);
-    gl_Position = fragPos;
+    normal = (Model_transform * vec4(vertexNormal,1)).xyz;
+    gl_Position = MVP * vec4(vertexPosition_modelspace,1);
 }

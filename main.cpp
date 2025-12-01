@@ -49,32 +49,58 @@ GLFWwindow* OpenGLWindow()
 //cube vertexes
 static const std::vector<Vertex> cube_vertex_buffer_data =
 {
-	Vertex(1.0f, 1.0f,-1.0f, 1.f, 0.f, 0.f, 1.0f, 1.0f), //0
-	Vertex(-1.0f, 1.0f, -1.0f, 0.583f, 0.771f, 0.014f, 0.0f, 1.0f), //1
-	Vertex(1.0f, 1.0f, 1.0f, 0.609f, 0.115f, 0.436f, 1.0f, 1.0f), //2
-	Vertex(-1.0f, 1.0f, 1.0f, 0.327f, 0.483f, 0.844f, 0.0f, 1.0f), //3
-	Vertex(1.0f, -1.0f, -1.0f, 0.435f, 0.602f, 0.223f, 1.0f, 0.0f), //4
-	Vertex(-1.0f,-1.0f, -1.0f, 0.559f, 0.436f, 0.730f, 0.0f, 0.0f), //5
-	Vertex(-1.0f, -1.0f, 1.0f, 0.359f, 0.583f, 0.152f, 0.0f, 0.0f), //6
-	Vertex(1.0f, -1.0f, 1.0f, 0.517f, 0.713f, 0.338f, 1.0f, 0.0f) //7
+	Vertex{glm::vec3(1.0f, 1.0f,-1.0f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 1.0f)}, //0
+	Vertex{glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 0.0f)}, //1
+	Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.f, 0.f)}, //2
+	Vertex{glm::vec3(1.0f, -1.0f,-1.0f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.0f, 1.f)}, //3
+
+	Vertex{glm::vec3(-1.0f, 1.0f,-1.0f), glm::vec3(-1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 1.0f)}, //4
+	Vertex{glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(-1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 0.0f)}, //5
+	Vertex{glm::vec3(-1.0f, -1.0f, 1.0f), glm::vec3(-1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.f, 0.f)}, //6
+	Vertex{glm::vec3(-1.0f, -1.0f,-1.0f), glm::vec3(-1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.0f, 1.f)}, //7
+
+	Vertex{glm::vec3(1.0f, 1.0f,-1.0f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 1.0f)}, //8
+	Vertex{glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 0.0f)}, //9
+	Vertex{glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.f, 0.f)}, //10
+	Vertex{glm::vec3(-1.0f, 1.0f,-1.0f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.0f, 1.f)}, //11
+
+	Vertex{glm::vec3(1.0f, -1.0f,-1.0f), glm::vec3(0.f, -1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 1.0f)}, //12
+	Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec3(0.f, -1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 0.0f)}, //13
+	Vertex{glm::vec3(-1.0f, -1.0f, 1.0f), glm::vec3(0.f, -1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.f, 0.f)}, //14
+	Vertex{glm::vec3(-1.0f, -1.0f,-1.0f), glm::vec3(0.f, -1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.0f, 1.f)}, //15
+
+	Vertex{glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 1.0f)}, //16
+	Vertex{glm::vec3(1.0f, -1.0f, 1.0f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 0.0f)}, //17
+	Vertex{glm::vec3(-1.0f, -1.0f, 1.0f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.f, 0.f)}, //18
+	Vertex{glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.0f, 1.f)}, //19
+
+	Vertex{glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 1.0f)}, //20
+	Vertex{glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(1.0f, 0.0f)}, //21
+	Vertex{glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.f, 0.f)}, //22
+	Vertex{glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec2(0.0f, 1.f)}, //23
 };
 
 static const std::vector<unsigned int> cube_indices =
 {
-	0,1,4,5,6,1,3,0,2,4,7,6,2,3
+	0,2,1,2,0,3,
+	4,5,6,6,7,4,
+	8,9,10,10,11,8,
+	12,14,13,14,12,15,
+	16,17,18,18,19,16,
+	20,22,21,22,20,23,
 };
 
 static const std::vector<Vertex> plane_vertex_buffer_data =
 {
-	Vertex(1,0,1,1,1,1,0,0),
-	Vertex(1,0,-1,1,1,1,0,1),
-	Vertex(-1,0,-1,1,1,1,1,1),
-	Vertex(-1,0,1,1,1,1,1,0)
+	Vertex{glm::vec3(1,0,1), glm::vec3(0.f,1.f,0.f), glm::vec3(1,1,1), glm::vec2(0,0)},
+	Vertex{glm::vec3(1,0,-1), glm::vec3(0,1,0), glm::vec3(1,1,1), glm::vec2(0,1)},
+	Vertex{glm::vec3(-1,0,-1), glm::vec3(0,1,0), glm::vec3(1,1,1), glm::vec2(1,1)},
+	Vertex{glm::vec3(-1,0,1), glm::vec3(0,1,0), glm::vec3(1,1,1), glm::vec2(1,0)}
 };
 
 static const std::vector<unsigned int> plane_indices =
 {
-	0,1,3,2
+	0,1,2,2,3,0,
 };
 
 
